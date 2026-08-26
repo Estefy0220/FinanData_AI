@@ -24,7 +24,27 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
+# ======================================================================
+# PALETA DE COLORES
+# ======================================================================
+
 PRIMARY = "#0757c9"
+
+# Colores de las tarjetas KPI
+COLOR_PURPLE = "#7050f6"
+COLOR_BLUE = "#0878e8"
+COLOR_TEAL = "#0ca5ba"
+COLOR_GREEN = "#05c47a"
+COLOR_VIOLET = "#8b4df1"
+COLOR_DARK_BLUE = "#0756c9"
+
+# Paleta utilizada en gráficas
+COLOR_CHART_1 = COLOR_GREEN
+COLOR_CHART_2 = COLOR_VIOLET
+COLOR_CHART_3 = COLOR_DARK_BLUE
+COLOR_CHART_4 = COLOR_BLUE
+COLOR_CHART_5 = COLOR_TEAL
 
 
 # ======================================================================
@@ -82,12 +102,29 @@ st.markdown(
         display: block;
     }
 
-    .k1 { background: #7050f6; }
-    .k2 { background: #0878e8; }
-    .k3 { background: #0ca5ba; }
-    .k4 { background: #05c47a; }
-    .k5 { background: #8b4df1; }
-    .k6 { background: #0756c9; }
+    .k1 {
+        background: #7050f6;
+    }
+
+    .k2 {
+        background: #0878e8;
+    }
+
+    .k3 {
+        background: #0ca5ba;
+    }
+
+    .k4 {
+        background: #05c47a;
+    }
+
+    .k5 {
+        background: #8b4df1;
+    }
+
+    .k6 {
+        background: #0756c9;
+    }
 
     .diag-box {
         background: #ffffff;
@@ -182,21 +219,21 @@ st.markdown(
     }
 
     .risk-low {
-        border-left: 4px solid #10b981;
+        border-left: 4px solid #05c47a;
         padding: 10px 14px;
         border-radius: 8px;
         background: #fff;
     }
 
     .risk-med {
-        border-left: 4px solid #f59e0b;
+        border-left: 4px solid #8b4df1;
         padding: 10px 14px;
         border-radius: 8px;
         background: #fff;
     }
 
     .risk-high {
-        border-left: 4px solid #ef4444;
+        border-left: 4px solid #0756c9;
         padding: 10px 14px;
         border-radius: 8px;
         background: #fff;
@@ -207,6 +244,38 @@ st.markdown(
         font-size: 12px;
         margin-top: -5px;
         margin-bottom: 8px;
+    }
+
+    .upload-info {
+        background: #f7f9fc;
+        border: 1px solid #e3e8f0;
+        border-radius: 9px;
+        padding: 14px 15px;
+        margin-bottom: 8px;
+    }
+
+    .upload-info-title {
+        color: #25344a;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .upload-info-text {
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .column-list {
+        color: #344054;
+        font-size: 11px;
+        line-height: 1.55;
+        margin-top: 8px;
+    }
+
+    .column-item {
+        padding: 2px 0;
     }
 
     </style>
@@ -679,14 +748,14 @@ def semaforo_endeudamiento(v):
 
     if v > 0.70:
         return (
-            "🔴",
+            "🔵",
             "Alto",
             "Una proporción elevada de los activos está financiada con deuda.",
         )
 
     if v > 0.50:
         return (
-            "🟠",
+            "🟣",
             "Moderado",
             "El nivel de deuda es considerable y debe vigilarse.",
         )
@@ -702,14 +771,14 @@ def semaforo_cobertura(v):
 
     if v < 1:
         return (
-            "🔴",
+            "🔵",
             "Riesgo",
             "El flujo disponible no alcanza para cubrir completamente la cuota.",
         )
 
     if v < 1.30:
         return (
-            "🟠",
+            "🟣",
             "Ajustada",
             "El flujo cubre la cuota, pero con poco margen de holgura.",
         )
@@ -725,14 +794,14 @@ def semaforo_margen(v):
 
     if v < 0.20:
         return (
-            "🔴",
+            "🔵",
             "Bajo",
             "El negocio tiene poca capacidad para absorber gastos adicionales.",
         )
 
     if v < 0.30:
         return (
-            "🟠",
+            "🟣",
             "Moderado",
             "El margen es aceptable, aunque con espacio limitado de maniobra.",
         )
@@ -748,14 +817,14 @@ def semaforo_liquidez(v):
 
     if v < 1:
         return (
-            "🔴",
+            "🔵",
             "Atención",
             "Los activos corrientes no alcanzan para cubrir totalmente las obligaciones de corto plazo.",
         )
 
     if v < 1.20:
         return (
-            "🟠",
+            "🟣",
             "Ajustada",
             "La liquidez cubre lo corriente pero con poco colchón.",
         )
@@ -771,7 +840,7 @@ def semaforo_utilidad(v):
 
     if v < 0:
         return (
-            "🔴",
+            "🔵",
             "Negativa",
             "El negocio no está generando excedente después de sus costos y gastos.",
         )
@@ -1034,7 +1103,7 @@ with st.sidebar:
     st.divider()
 
     # ==============================================================
-    # CARGADOR ÚNICO
+    # CARGADOR
     # ==============================================================
 
     archivo = st.file_uploader(
@@ -1091,6 +1160,123 @@ with st.sidebar:
             )
 
     st.divider()
+
+    # ==============================================================
+    # INFORMACIÓN REQUERIDA DEL ARCHIVO
+    # ==============================================================
+
+    with st.expander(
+        "📋 Información requerida para el análisis",
+        expanded=False,
+    ):
+
+        st.markdown(
+            """
+            <div class="upload-info">
+
+                <div class="upload-info-title">
+                    Estructura del archivo
+                </div>
+
+                <div class="upload-info-text">
+                    Para que FinanData AI pueda calcular los indicadores
+                    financieros y clasificar el riesgo, el archivo debe
+                    contener una fila por negocio y las siguientes columnas:
+                </div>
+
+                <div class="column-list">
+
+                    <div class="column-item">
+                        <strong>ID_Cliente</strong> — Identificador único del cliente.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Cliente</strong> — Nombre o razón social del negocio.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Ciudad</strong> — Ciudad o municipio.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Actividad_Economica</strong> — Actividad económica del negocio.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Ventas_Mensuales</strong> — Ventas mensuales.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Costo_Ventas</strong> — Costo mensual de ventas.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Gastos_Operativos</strong> — Gastos operativos mensuales.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Gastos_Financieros</strong> — Gastos financieros mensuales.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Activos_Corrientes</strong> — Activos de corto plazo.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Pasivos_Corrientes</strong> — Obligaciones de corto plazo.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Activos_Totales</strong> — Total de activos.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Pasivos_Totales</strong> — Total de pasivos.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Patrimonio</strong> — Patrimonio del negocio.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Cuota_Mensual_Credito</strong> — Cuota mensual del crédito.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Antiguedad_Negocio_Anios</strong> — Antigüedad del negocio en años.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Historial_Pagos</strong> — Historial de comportamiento de pagos.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Dias_Mora_Max</strong> — Máximo de días de mora.
+                    </div>
+
+                    <div class="column-item">
+                        <strong>Tiene_Centrales</strong> — Indicador de consulta o registro en centrales.
+                    </div>
+
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.caption(
+            "Formatos aceptados: XLSX, XLS y CSV."
+        )
+
+        st.caption(
+            "Los nombres de las columnas financieras deben coincidir "
+            "con la estructura indicada para garantizar el cálculo correcto."
+        )
+
+    # ==============================================================
+    # INTERPRETACIÓN
+    # ==============================================================
 
     with st.expander(
         "ℹ️ ¿Cómo interpretar los indicadores?"
@@ -1414,7 +1600,7 @@ with r1:
                 RIESGO BAJO
             </small>
 
-            <h2>
+            <h2 style="color:{COLOR_GREEN}; margin-bottom:0;">
                 {(df["riesgo"] == "BAJO").sum()}
             </h2>
 
@@ -1433,7 +1619,7 @@ with r2:
                 RIESGO MEDIO
             </small>
 
-            <h2>
+            <h2 style="color:{COLOR_VIOLET}; margin-bottom:0;">
                 {(df["riesgo"] == "MEDIO").sum()}
             </h2>
 
@@ -1452,7 +1638,7 @@ with r3:
                 RIESGO ALTO
             </small>
 
-            <h2>
+            <h2 style="color:{COLOR_DARK_BLUE}; margin-bottom:0;">
                 {(df["riesgo"] == "ALTO").sum()}
             </h2>
 
@@ -1506,12 +1692,16 @@ with g1:
                 ],
                 values=conteo.values,
                 marker_colors=[
-                    "#10b981",
-                    "#f59e0b",
-                    "#ef4444",
+                    COLOR_GREEN,
+                    COLOR_VIOLET,
+                    COLOR_DARK_BLUE,
                 ],
                 hole=0.5,
                 textinfo="label+percent",
+                textfont=dict(
+                    color="#344054",
+                    size=11,
+                ),
                 hovertemplate=(
                     "<b>%{label}</b><br>"
                     "Negocios: %{value}<br>"
@@ -1530,8 +1720,18 @@ with g1:
             r=10,
         ),
         height=330,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(
+            color="#344054",
+            family="Arial",
+        ),
         legend=dict(
-            orientation="h"
+            orientation="h",
+            yanchor="bottom",
+            y=-0.05,
+            xanchor="center",
+            x=0.5,
         ),
     )
 
@@ -1587,9 +1787,9 @@ with g2:
         y="Liquidez_x",
         color="Riesgo",
         color_discrete_map={
-            "BAJO": "#10b981",
-            "MEDIO": "#f59e0b",
-            "ALTO": "#ef4444",
+            "BAJO": COLOR_GREEN,
+            "MEDIO": COLOR_VIOLET,
+            "ALTO": COLOR_DARK_BLUE,
         },
         hover_name="Cliente_Display",
         hover_data={
@@ -1607,7 +1807,7 @@ with g2:
     fig_liquidez.add_vline(
         x=50,
         line_dash="dash",
-        line_color="#64748b",
+        line_color=COLOR_TEAL,
         annotation_text="50%",
         annotation_position="top",
     )
@@ -1615,7 +1815,7 @@ with g2:
     fig_liquidez.add_vline(
         x=70,
         line_dash="dot",
-        line_color="#ef4444",
+        line_color=COLOR_DARK_BLUE,
         annotation_text="70%",
         annotation_position="top right",
     )
@@ -1623,7 +1823,7 @@ with g2:
     fig_liquidez.add_hline(
         y=1,
         line_dash="dash",
-        line_color="#64748b",
+        line_color=COLOR_TEAL,
         annotation_text="Liquidez 1.0x",
         annotation_position="bottom right",
     )
@@ -1646,8 +1846,18 @@ with g2:
             r=10,
         ),
         height=330,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(
+            color="#344054",
+            family="Arial",
+        ),
         legend=dict(
-            orientation="h"
+            orientation="h",
+            yanchor="bottom",
+            y=-0.05,
+            xanchor="center",
+            x=0.5,
         ),
     )
 
@@ -1709,9 +1919,9 @@ with g3:
         y="DSCR",
         color="Riesgo",
         color_discrete_map={
-            "BAJO": "#10b981",
-            "MEDIO": "#f59e0b",
-            "ALTO": "#ef4444",
+            "BAJO": COLOR_GREEN,
+            "MEDIO": COLOR_VIOLET,
+            "ALTO": COLOR_DARK_BLUE,
         },
         hover_name="Cliente_Display",
         hover_data={
@@ -1728,7 +1938,7 @@ with g3:
     fig_dscr.add_hline(
         y=1,
         line_dash="dash",
-        line_color="#ef4444",
+        line_color=COLOR_DARK_BLUE,
         annotation_text="Mínimo 1.00x",
         annotation_position="top left",
     )
@@ -1736,7 +1946,7 @@ with g3:
     fig_dscr.add_hline(
         y=1.30,
         line_dash="dot",
-        line_color="#10b981",
+        line_color=COLOR_GREEN,
         annotation_text="Objetivo 1.30x",
         annotation_position="top right",
     )
@@ -1749,11 +1959,21 @@ with g3:
             r=10,
         ),
         height=330,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(
+            color="#344054",
+            family="Arial",
+        ),
         xaxis=dict(
             tickangle=-35
         ),
         legend=dict(
-            orientation="h"
+            orientation="h",
+            yanchor="bottom",
+            y=-0.20,
+            xanchor="center",
+            x=0.5,
         ),
     )
 
@@ -1807,9 +2027,9 @@ with g4:
         orientation="h",
         color="riesgo",
         color_discrete_map={
-            "BAJO": "#10b981",
-            "MEDIO": "#f59e0b",
-            "ALTO": "#ef4444",
+            "BAJO": COLOR_GREEN,
+            "MEDIO": COLOR_VIOLET,
+            "ALTO": COLOR_DARK_BLUE,
         },
         hover_name="Cliente_Display",
         hover_data={
@@ -1826,7 +2046,7 @@ with g4:
     fig_dscr_horizontal.add_vline(
         x=1,
         line_dash="dash",
-        line_color="#ef4444",
+        line_color=COLOR_DARK_BLUE,
         annotation_text="1.00x",
         annotation_position="top",
     )
@@ -1834,7 +2054,7 @@ with g4:
     fig_dscr_horizontal.add_vline(
         x=1.30,
         line_dash="dot",
-        line_color="#10b981",
+        line_color=COLOR_GREEN,
         annotation_text="1.30x",
         annotation_position="top",
     )
@@ -1847,8 +2067,18 @@ with g4:
             r=10,
         ),
         height=330,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(
+            color="#344054",
+            family="Arial",
+        ),
         legend=dict(
-            orientation="h"
+            orientation="h",
+            yanchor="bottom",
+            y=-0.10,
+            xanchor="center",
+            x=0.5,
         ),
     )
 
