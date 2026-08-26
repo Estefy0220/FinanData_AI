@@ -904,7 +904,11 @@ def nombre_cliente(row):
 
 with st.sidebar:
 
-    st.markdown(
+    # CORRECCIÓN:
+    # Se utiliza st.html() en lugar de st.markdown()
+    # para evitar que el HTML del logo sea interpretado
+    # como bloque de código por Markdown.
+    st.html(
         f"""
         <div style="
             display:flex;
@@ -933,8 +937,7 @@ with st.sidebar:
                 FinanData AI
             </span>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
     st.caption(
