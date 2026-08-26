@@ -1,11 +1,3 @@
-"""
-FinanData AI - Dashboard comercial (Streamlit)
-
-Análisis financiero automatizado para estudio de crédito de negocios.
-
-Réplica funcional del dashboard HTML original + diagnóstico explicado por indicador.
-"""
-
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -34,10 +26,6 @@ PRIMARY = "#0757c9"
 st.markdown(
     """
     <style>
-
-    /* ==============================================================
-       KPI
-       ============================================================== */
 
     .kpi-card {
         border-radius: 10px;
@@ -74,10 +62,6 @@ st.markdown(
         letter-spacing: -0.3px;
     }
 
-    /* Ventas promedio:
-       El valor permanece completo en una sola línea.
-       El tamaño se adapta al ancho disponible.
-    */
     .kpi-sales-value {
         font-size: clamp(13px, 1.12vw, 19px);
         font-weight: 800;
@@ -96,11 +80,6 @@ st.markdown(
     .k4 { background: #05c47a; }
     .k5 { background: #8b4df1; }
     .k6 { background: #0756c9; }
-
-
-    /* ==============================================================
-       DIAGNÓSTICO
-       ============================================================== */
 
     .diag-box {
         background: #ffffff;
@@ -168,11 +147,6 @@ st.markdown(
         color: #344054;
     }
 
-
-    /* ==============================================================
-       ASISTENTE IA
-       ============================================================== */
-
     .assistant-box {
         background: linear-gradient(
             135deg,
@@ -199,11 +173,6 @@ st.markdown(
         margin: 0;
     }
 
-
-    /* ==============================================================
-       RIESGO
-       ============================================================== */
-
     .risk-low {
         border-left: 4px solid #10b981;
         padding: 10px 14px;
@@ -225,11 +194,6 @@ st.markdown(
         background: #fff;
     }
 
-
-    /* ==============================================================
-       GRÁFICAS
-       ============================================================== */
-
     .chart-description {
         color: #667085;
         font-size: 12px;
@@ -248,7 +212,6 @@ st.markdown(
 # ----------------------------------------------------------------------
 
 def to_number(v):
-    """Convierte valores colombianos a número."""
 
     if pd.isna(v):
         return 0.0
@@ -256,7 +219,14 @@ def to_number(v):
     if isinstance(v, (int, float)):
         return float(v)
 
-    s = str(v).strip().replace(" ", "").replace("$", "")
+    s = str(v).strip()
+
+    s = (
+        s.replace(" ", "")
+        .replace("$", "")
+        .replace("COP", "")
+        .replace("cop", "")
+    )
 
     if "," in s and "." in s:
         s = s.replace(".", "").replace(",", ".")
@@ -265,18 +235,22 @@ def to_number(v):
 
     try:
         return float(s)
+
     except ValueError:
         return 0.0
 
 
 def money(v):
+
     try:
         return f"${v:,.0f}".replace(",", ".")
+
     except Exception:
         return "$0"
 
 
 def percent(v):
+
     return f"{v * 100:.1f}%"
 
 
@@ -295,24 +269,15 @@ def get_field(row, names, default=0):
 
 
 def safe_text(value):
-    """Evita que datos del Excel rompan el HTML."""
 
     return escape(str(value))
 
 
 # ----------------------------------------------------------------------
-# KPI VENTAS PROMEDIO
+# KPI VENTAS
 # ----------------------------------------------------------------------
 
 def ventas_kpi_html(valor):
-
-    """
-    Mantiene el valor completo de ventas en una sola línea
-    y adapta el tamaño de letra al espacio disponible.
-
-    Ejemplo:
-    $2.919.610
-    """
 
     valor_formateado = money(valor)
 
@@ -324,10 +289,40 @@ def ventas_kpi_html(valor):
 
 
 # ----------------------------------------------------------------------
+# NOMBRE CLIENTE
+# ----------------------------------------------------------------------
+
+def nombre_cliente(row):
+
+    for col in [
+        "Cliente",
+        "Nombre_Cliente",
+        "Nombre cliente",
+        "Razon_Social",
+        "Razón_Social",
+        "Razon Social",
+        "Empresa",
+    ]:
+
+        if (
+            col in row
+            and pd.notna(row[col])
+            and str(row[col]).strip()
+        ):
+            return row[col]
+
+    return "Cliente"
+
+
+# ----------------------------------------------------------------------
 # CÁLCULO DE INDICADORES
 # ----------------------------------------------------------------------
 
 def calcular_indicadores(row):
+
+    # --------------------------------------------------------------
+    # INGRESOS / VENTAS
+    # --------------------------------------------------------------
 
     ventas = to_number(
         get_field(
@@ -338,9 +333,14 @@ def calcular_indicadores(row):
                 "Ventas",
                 "Ingresos_Mensuales",
                 "Ingresos",
+                "Ingresos mensuales",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # COSTO DE VENTAS
+    # --------------------------------------------------------------
 
     costo = to_number(
         get_field(
@@ -350,9 +350,14 @@ def calcular_indicadores(row):
                 "Costo de ventas",
                 "Costos_Ventas",
                 "Costo_Ventas_Mensual",
+                "Costo de Ventas",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # GASTOS OPERATIVOS
+    # --------------------------------------------------------------
 
     gastos = to_number(
         get_field(
@@ -361,9 +366,15 @@ def calcular_indicadores(row):
                 "Gastos_Operativos",
                 "Gastos operativos",
                 "Gastos_Operacion",
+                "Gastos Operacionales",
+                "Gastos_Operacionales",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # GASTOS FINANCIEROS
+    # --------------------------------------------------------------
 
     financieros = to_number(
         get_field(
@@ -371,9 +382,14 @@ def calcular_indicadores(row):
             [
                 "Gastos_Financieros",
                 "Gastos financieros",
-            ],
+                "Gastos Financiero",
+            ]
         )
     )
+
+    # --------------------------------------------------------------
+    # ACTIVOS CORRIENTES
+    # --------------------------------------------------------------
 
     ac = to_number(
         get_field(
@@ -381,9 +397,15 @@ def calcular_indicadores(row):
             [
                 "Activos_Corrientes",
                 "Activos corrientes",
+                "Activo_Corriente",
+                "Activo Corriente",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # PASIVOS CORRIENTES
+    # --------------------------------------------------------------
 
     pc = to_number(
         get_field(
@@ -391,9 +413,15 @@ def calcular_indicadores(row):
             [
                 "Pasivos_Corrientes",
                 "Pasivos corrientes",
+                "Pasivo_Corriente",
+                "Pasivo Corriente",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # ACTIVOS TOTALES
+    # --------------------------------------------------------------
 
     at = to_number(
         get_field(
@@ -401,9 +429,15 @@ def calcular_indicadores(row):
             [
                 "Activos_Totales",
                 "Activos totales",
+                "Activo_Total",
+                "Activo Total",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # PASIVOS TOTALES
+    # --------------------------------------------------------------
 
     pt = to_number(
         get_field(
@@ -411,9 +445,15 @@ def calcular_indicadores(row):
             [
                 "Pasivos_Totales",
                 "Pasivos totales",
+                "Pasivo_Total",
+                "Pasivo Total",
             ],
         )
     )
+
+    # --------------------------------------------------------------
+    # CUOTA MENSUAL
+    # --------------------------------------------------------------
 
     cuota = to_number(
         get_field(
@@ -423,46 +463,82 @@ def calcular_indicadores(row):
                 "Cuota mensual credito",
                 "Cuota_Mensual",
                 "Cuota",
+                "Cuota mensual",
             ],
         )
     )
 
+    # --------------------------------------------------------------
+    # CÁLCULOS
+    # --------------------------------------------------------------
+
     utilidad_bruta = ventas - costo
+
+    margen_bruto = (
+        utilidad_bruta / ventas
+        if ventas
+        else 0
+    )
 
     utilidad_neta = (
         utilidad_bruta
         - gastos
-        - (2 * financieros)
+        - financieros
     )
 
-    flujo = utilidad_bruta - gastos
+    margen_neto = (
+        utilidad_neta / ventas
+        if ventas
+        else 0
+    )
+
+    flujo = (
+        utilidad_bruta
+        - gastos
+    )
+
+    capital_trabajo = (
+        ac - pc
+    )
+
+    endeudamiento = (
+        pt / at
+        if at
+        else 0
+    )
+
+    liquidez = (
+        ac / pc
+        if pc
+        else 0
+    )
+
+    cobertura = (
+        flujo / cuota
+        if cuota
+        else 0
+    )
+
+    apalancamiento = (
+        pt / (
+            at - pt
+        )
+        if (at - pt) != 0
+        else 0
+    )
 
     return pd.Series(
         {
             "ventas": ventas,
             "utilidadBruta": utilidad_bruta,
+            "margenBruto": margen_bruto,
             "utilidadNeta": utilidad_neta,
-            "margenBruto": (
-                utilidad_bruta / ventas
-                if ventas
-                else 0
-            ),
-            "endeudamiento": (
-                pt / at
-                if at
-                else 0
-            ),
-            "liquidez": (
-                ac / pc
-                if pc
-                else 0
-            ),
-            "cobertura": (
-                flujo / cuota
-                if cuota
-                else 0
-            ),
-            "capitalTrabajo": ac - pc,
+            "margenNeto": margen_neto,
+            "capitalTrabajo": capital_trabajo,
+            "endeudamiento": endeudamiento,
+            "liquidez": liquidez,
+            "cobertura": cobertura,
+            "apalancamiento": apalancamiento,
         }
     )
 
@@ -482,6 +558,7 @@ def clasificar_riesgo(row):
                 "Dias_Mora_Max",
                 "Días de mora",
                 "Dias_Mora",
+                "Dias Mora",
             ],
         )
     )
@@ -492,10 +569,27 @@ def clasificar_riesgo(row):
             [
                 "Historial_Pagos",
                 "Historial de pagos",
+                "Historial Pagos",
             ],
             "",
         )
     ).lower()
+
+    centrales = str(
+        get_field(
+            row,
+            [
+                "Tiene_Centrales",
+                "Tiene Centrales",
+                "Centrales",
+            ],
+            "",
+        )
+    ).lower()
+
+    # --------------------------------------------------------------
+    # ENDEUDAMIENTO
+    # --------------------------------------------------------------
 
     if row["endeudamiento"] > 0.70:
         p += 3
@@ -503,11 +597,19 @@ def clasificar_riesgo(row):
     elif row["endeudamiento"] > 0.50:
         p += 1
 
+    # --------------------------------------------------------------
+    # COBERTURA
+    # --------------------------------------------------------------
+
     if row["cobertura"] < 1:
         p += 3
 
     elif row["cobertura"] < 1.30:
         p += 1
+
+    # --------------------------------------------------------------
+    # MARGEN
+    # --------------------------------------------------------------
 
     if row["margenBruto"] < 0.20:
         p += 2
@@ -515,8 +617,16 @@ def clasificar_riesgo(row):
     elif row["margenBruto"] < 0.30:
         p += 1
 
+    # --------------------------------------------------------------
+    # UTILIDAD
+    # --------------------------------------------------------------
+
     if row["utilidadNeta"] < 0:
         p += 2
+
+    # --------------------------------------------------------------
+    # MORA
+    # --------------------------------------------------------------
 
     if mora > 30:
         p += 3
@@ -524,10 +634,32 @@ def clasificar_riesgo(row):
     elif mora > 15:
         p += 1
 
-    if "malo" in hist or "incum" in hist:
+    # --------------------------------------------------------------
+    # HISTORIAL
+    # --------------------------------------------------------------
+
+    if (
+        "malo" in hist
+        or "incum" in hist
+    ):
         p += 3
 
     elif "regular" in hist:
+        p += 1
+
+    # --------------------------------------------------------------
+    # CENTRALES
+    # --------------------------------------------------------------
+
+    if (
+        "negativo" in centrales
+        or "malo" in centrales
+        or "castigo" in centrales
+        or "incum" in centrales
+    ):
+        p += 3
+
+    elif "regular" in centrales:
         p += 1
 
     return (
@@ -565,6 +697,10 @@ def evaluar_viabilidad(riesgo, row):
     return "NO VIABLE"
 
 
+# ----------------------------------------------------------------------
+# RECOMENDACIÓN
+# ----------------------------------------------------------------------
+
 def generar_recomendacion(viabilidad):
 
     if viabilidad == "VIABLE":
@@ -588,12 +724,13 @@ def generar_recomendacion(viabilidad):
 
 
 # ----------------------------------------------------------------------
-# SEMÁFOROS
+# SEMÁFORO ENDEUDAMIENTO
 # ----------------------------------------------------------------------
 
 def semaforo_endeudamiento(v):
 
     if v > 0.70:
+
         return (
             "🔴",
             "Alto",
@@ -601,6 +738,7 @@ def semaforo_endeudamiento(v):
         )
 
     if v > 0.50:
+
         return (
             "🟠",
             "Moderado",
@@ -614,9 +752,14 @@ def semaforo_endeudamiento(v):
     )
 
 
+# ----------------------------------------------------------------------
+# SEMÁFORO COBERTURA
+# ----------------------------------------------------------------------
+
 def semaforo_cobertura(v):
 
     if v < 1:
+
         return (
             "🔴",
             "Riesgo",
@@ -624,6 +767,7 @@ def semaforo_cobertura(v):
         )
 
     if v < 1.30:
+
         return (
             "🟠",
             "Ajustada",
@@ -637,9 +781,14 @@ def semaforo_cobertura(v):
     )
 
 
+# ----------------------------------------------------------------------
+# SEMÁFORO MARGEN
+# ----------------------------------------------------------------------
+
 def semaforo_margen(v):
 
     if v < 0.20:
+
         return (
             "🔴",
             "Bajo",
@@ -647,6 +796,7 @@ def semaforo_margen(v):
         )
 
     if v < 0.30:
+
         return (
             "🟠",
             "Moderado",
@@ -660,9 +810,14 @@ def semaforo_margen(v):
     )
 
 
+# ----------------------------------------------------------------------
+# SEMÁFORO LIQUIDEZ
+# ----------------------------------------------------------------------
+
 def semaforo_liquidez(v):
 
     if v < 1:
+
         return (
             "🔴",
             "Atención",
@@ -670,6 +825,7 @@ def semaforo_liquidez(v):
         )
 
     if v < 1.20:
+
         return (
             "🟠",
             "Ajustada",
@@ -683,9 +839,14 @@ def semaforo_liquidez(v):
     )
 
 
+# ----------------------------------------------------------------------
+# SEMÁFORO UTILIDAD
+# ----------------------------------------------------------------------
+
 def semaforo_utilidad(v):
 
     if v < 0:
+
         return (
             "🔴",
             "Negativa",
@@ -725,9 +886,6 @@ def generar_diagnostico_cliente(row):
         row["utilidadNeta"]
     )
 
-    # IMPORTANTE:
-    # Todo el bloque se genera como HTML continuo.
-    # No se separan los div mediante líneas Markdown.
     html = f"""
     <div class="diag-box">
 
@@ -841,13 +999,61 @@ def generar_conclusion(row):
 
 
 # ----------------------------------------------------------------------
-# PROCESAMIENTO
+# PROCESAMIENTO DEL EXCEL
 # ----------------------------------------------------------------------
 
 @st.cache_data(show_spinner=False)
-def procesar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def procesar_dataframe(df):
 
     df = df.copy()
+
+    # --------------------------------------------------------------
+    # IMPORTANTE:
+    # SOLO SE CONSERVAN LAS COLUMNAS HASTA Tiene_Centrales
+    # --------------------------------------------------------------
+
+    if "Tiene_Centrales" in df.columns:
+
+        posicion = df.columns.get_loc(
+            "Tiene_Centrales"
+        )
+
+        df = df.iloc[
+            :,
+            :posicion + 1
+        ].copy()
+
+    else:
+
+        # Alternativas por si Excel utiliza otro nombre
+        posibles = [
+            "Tiene Centrales",
+            "Centrales",
+        ]
+
+        encontrado = None
+
+        for col in posibles:
+
+            if col in df.columns:
+
+                encontrado = col
+                break
+
+        if encontrado is not None:
+
+            posicion = df.columns.get_loc(
+                encontrado
+            )
+
+            df = df.iloc[
+                :,
+                :posicion + 1
+            ].copy()
+
+    # --------------------------------------------------------------
+    # CALCULAR INDICADORES
+    # --------------------------------------------------------------
 
     indicadores = df.apply(
         calcular_indicadores,
@@ -855,47 +1061,47 @@ def procesar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     df = pd.concat(
-        [df, indicadores],
+        [
+            df,
+            indicadores
+        ],
         axis=1
     )
+
+    # --------------------------------------------------------------
+    # RIESGO
+    # --------------------------------------------------------------
 
     df["riesgo"] = df.apply(
         clasificar_riesgo,
         axis=1
     )
 
+    # --------------------------------------------------------------
+    # VIABILIDAD
+    # --------------------------------------------------------------
+
     df["viabilidad"] = df.apply(
-        lambda r: evaluar_viabilidad(
+        lambda r:
+        evaluar_viabilidad(
             r["riesgo"],
             r
         ),
         axis=1,
     )
 
+    # --------------------------------------------------------------
+    # RECOMENDACIÓN
+    # --------------------------------------------------------------
+
     df["recomendacion"] = (
         df["viabilidad"]
-        .apply(generar_recomendacion)
+        .apply(
+            generar_recomendacion
+        )
     )
 
     return df
-
-
-def nombre_cliente(row):
-
-    for col in [
-        "Cliente",
-        "Nombre_Cliente",
-        "Nombre cliente",
-    ]:
-
-        if (
-            col in row
-            and pd.notna(row[col])
-            and str(row[col]).strip()
-        ):
-            return row[col]
-
-    return "Cliente"
 
 
 # ----------------------------------------------------------------------
@@ -904,11 +1110,7 @@ def nombre_cliente(row):
 
 with st.sidebar:
 
-    # CORRECCIÓN:
-    # Se utiliza st.html() en lugar de st.markdown()
-    # para evitar que el HTML del logo sea interpretado
-    # como bloque de código por Markdown.
-    st.html(
+    st.markdown(
         f"""
         <div style="
             display:flex;
@@ -916,6 +1118,7 @@ with st.sidebar:
             gap:10px;
             margin-bottom:10px;
         ">
+
             <div style="
                 width:32px;
                 height:32px;
@@ -936,8 +1139,10 @@ with st.sidebar:
             ">
                 FinanData AI
             </span>
+
         </div>
-        """
+        """,
+        unsafe_allow_html=True,
     )
 
     st.caption(
@@ -956,13 +1161,16 @@ with st.sidebar:
     )
 
     if "clientes_df" not in st.session_state:
+
         st.session_state.clientes_df = None
 
     if archivo is not None:
 
         try:
 
-            if archivo.name.lower().endswith(".csv"):
+            if archivo.name.lower().endswith(
+                ".csv"
+            ):
 
                 df_raw = pd.read_csv(
                     archivo
@@ -983,7 +1191,9 @@ with st.sidebar:
             else:
 
                 st.session_state.clientes_df = (
-                    procesar_dataframe(df_raw)
+                    procesar_dataframe(
+                        df_raw
+                    )
                 )
 
                 st.success(
@@ -1008,17 +1218,21 @@ with st.sidebar:
 
             - **Cobertura / DSCR** = Flujo disponible / Cuota del crédito. Debe ser mayor a 1.3x para tener holgura.
 
-            - **Margen bruto** = (Ventas − Costo de ventas) / Ventas. Refleja la rentabilidad del negocio.
+            - **Margen bruto** = (Ventas − Costo de ventas) / Ventas.
 
-            - **Liquidez** = Activos corrientes / Pasivos corrientes. Mayor a 1x indica capacidad de cubrir el corto plazo.
+            - **Liquidez** = Activos corrientes / Pasivos corrientes.
 
-            - **Utilidad neta** = Utilidad bruta − Gastos operativos − Gastos financieros. Debe ser positiva.
+            - **Utilidad neta** = Utilidad bruta − Gastos operativos − Gastos financieros.
 
             Estos indicadores combinados determinan el **riesgo**
             y la **viabilidad** de cada negocio.
             """
         )
 
+
+# ----------------------------------------------------------------------
+# DATAFRAME
+# ----------------------------------------------------------------------
 
 df = st.session_state.get(
     "clientes_df"
@@ -1068,16 +1282,20 @@ with col_selector:
 if df is None:
 
     st.info(
-        "Carga un archivo Excel desde la barra lateral para comenzar el análisis. "
-        "Puedes usar el archivo de ejemplo `datos/ejemplo_100_negocios.xlsx`."
+        "Carga un archivo Excel desde la barra lateral para comenzar el análisis."
     )
 
     st.stop()
 
 
+# ----------------------------------------------------------------------
+# FILTRO
+# ----------------------------------------------------------------------
+
 if seleccion == "Todos los clientes":
 
     datos = df
+
     cliente_idx = None
 
 else:
@@ -1100,6 +1318,7 @@ k1, k2, k3, k4, k5, k6 = st.columns(
 )
 
 kpis = [
+
     (
         k1,
         "k1",
@@ -1107,6 +1326,7 @@ kpis = [
         f"{len(datos)}",
         False,
     ),
+
     (
         k2,
         "k2",
@@ -1114,6 +1334,7 @@ kpis = [
         datos["ventas"].mean(),
         True,
     ),
+
     (
         k3,
         "k3",
@@ -1123,6 +1344,7 @@ kpis = [
         ),
         False,
     ),
+
     (
         k4,
         "k4",
@@ -1132,6 +1354,7 @@ kpis = [
         ),
         False,
     ),
+
     (
         k5,
         "k5",
@@ -1141,6 +1364,7 @@ kpis = [
         ),
         False,
     ),
+
     (
         k6,
         "k6",
@@ -1200,9 +1424,10 @@ if cliente_idx is not None:
         cliente_idx
     ]
 
-    # CAMBIO IMPORTANTE:
-    # Se utiliza st.html para garantizar que las etiquetas HTML
-    # no aparezcan como texto plano.
+    # --------------------------------------------------------------
+    # Se utiliza st.html para que el HTML no aparezca como texto.
+    # --------------------------------------------------------------
+
     st.html(
         generar_diagnostico_cliente(
             fila
@@ -1252,16 +1477,23 @@ else:
     st.html(
         f"""
         <div class="diag-box">
+
             <div class="diag-title">
                 Diagnóstico general de cartera
             </div>
 
             <div class="diag-row">
-                <span class="diag-icon">📊</span>
+
+                <span class="diag-icon">
+                    📊
+                </span>
+
                 <span class="diag-text">
                     {safe_text(texto)}
                 </span>
+
             </div>
+
         </div>
         """
     )
@@ -1288,10 +1520,15 @@ with r1:
     st.markdown(
         f"""
         <div class="risk-low">
-            <small>RIESGO BAJO</small>
+
+            <small>
+                RIESGO BAJO
+            </small>
+
             <h2>
                 {(df["riesgo"] == "BAJO").sum()}
             </h2>
+
         </div>
         """,
         unsafe_allow_html=True
@@ -1303,10 +1540,15 @@ with r2:
     st.markdown(
         f"""
         <div class="risk-med">
-            <small>RIESGO MEDIO</small>
+
+            <small>
+                RIESGO MEDIO
+            </small>
+
             <h2>
                 {(df["riesgo"] == "MEDIO").sum()}
             </h2>
+
         </div>
         """,
         unsafe_allow_html=True
@@ -1318,10 +1560,15 @@ with r3:
     st.markdown(
         f"""
         <div class="risk-high">
-            <small>RIESGO ALTO</small>
+
+            <small>
+                RIESGO ALTO
+            </small>
+
             <h2>
                 {(df["riesgo"] == "ALTO").sum()}
             </h2>
+
         </div>
         """,
         unsafe_allow_html=True
@@ -1341,7 +1588,7 @@ g1, g2 = st.columns(
 
 
 # ----------------------------------------------------------------------
-# GRÁFICA 1 - DISTRIBUCIÓN DEL RIESGO
+# GRÁFICA 1
 # ----------------------------------------------------------------------
 
 with g1:
@@ -1409,7 +1656,7 @@ with g1:
 
 
 # ----------------------------------------------------------------------
-# GRÁFICA 2 - LIQUIDEZ VS ENDEUDAMIENTO
+# GRÁFICA 2
 # ----------------------------------------------------------------------
 
 with g2:
@@ -1535,7 +1782,7 @@ g3, g4 = st.columns(
 
 
 # ----------------------------------------------------------------------
-# GRÁFICA 3 - DSCR / COBERTURA
+# GRÁFICA 3
 # ----------------------------------------------------------------------
 
 with g3:
@@ -1632,7 +1879,7 @@ with g3:
 
 
 # ----------------------------------------------------------------------
-# GRÁFICA 4 - DSCR HORIZONTAL
+# GRÁFICA 4
 # ----------------------------------------------------------------------
 
 with g4:
@@ -1774,50 +2021,62 @@ else:
     )
 
     campos = [
+
         (
             "CLIENTE",
             nombre_cliente(fila)
         ),
+
         (
             "CIUDAD",
             ciudad
         ),
+
         (
             "ACTIVIDAD",
             actividad
         ),
+
         (
             "VENTAS MENSUALES",
             money(fila["ventas"])
         ),
+
         (
             "UTILIDAD NETA",
             money(fila["utilidadNeta"])
         ),
+
         (
             "MARGEN",
             percent(fila["margenBruto"])
         ),
+
         (
             "ENDEUDAMIENTO",
             percent(fila["endeudamiento"])
         ),
+
         (
             "LIQUIDEZ",
             f"{fila['liquidez']:.2f}x"
         ),
+
         (
             "COBERTURA",
             f"{fila['cobertura']:.2f}x"
         ),
+
         (
             "CAPITAL DE TRABAJO",
             money(fila["capitalTrabajo"])
         ),
+
         (
             "RIESGO",
             fila["riesgo"]
         ),
+
         (
             "VIABILIDAD",
             fila["viabilidad"]
@@ -1831,7 +2090,9 @@ else:
         d4,
     ]
 
-    for i, (label, value) in enumerate(campos):
+    for i, (label, value) in enumerate(
+        campos
+    ):
 
         with cols[i % 4]:
 
@@ -1840,7 +2101,9 @@ else:
                 <small style="color:#778399;">
                     {safe_text(label)}
                 </small>
+
                 <br>
+
                 <strong>
                     {safe_text(value)}
                 </strong>
@@ -1904,7 +2167,8 @@ tabla_mostrar["endeudamiento"] = (
 tabla_mostrar["cobertura"] = (
     tabla_mostrar["cobertura"]
     .apply(
-        lambda x: f"{x:.2f}x"
+        lambda x:
+        f"{x:.2f}x"
     )
 )
 
@@ -1951,10 +2215,6 @@ viables = (
 ).sum()
 
 
-# CAMBIO IMPORTANTE:
-# Se utiliza st.html() para evitar que aparezcan etiquetas HTML
-# como texto plano.
-
 st.html(
     f"""
     <div class="assistant-box">
@@ -1964,20 +2224,38 @@ st.html(
         </div>
 
         <p class="assistant-text">
+
             El análisis identifica
-            <strong>{bajo}</strong>
+
+            <strong>
+                {bajo}
+            </strong>
+
             negocios en riesgo bajo,
-            <strong>{medio}</strong>
+
+            <strong>
+                {medio}
+            </strong>
+
             en riesgo medio y
-            <strong>{alto}</strong>
+
+            <strong>
+                {alto}
+            </strong>
+
             en riesgo alto.
 
             Se identifican
-            <strong>{viables}</strong>
+
+            <strong>
+                {viables}
+            </strong>
+
             perfiles viables en primera instancia.
 
             Estos resultados sirven como apoyo comercial y no reemplazan
             la decisión crediticia definitiva.
+
         </p>
 
     </div>
