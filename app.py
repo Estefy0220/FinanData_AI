@@ -4,13 +4,13 @@ FinanData AI - Dashboard comercial (Streamlit)
 Análisis financiero automatizado para estudio de crédito de negocios.
 
 Réplica funcional del dashboard HTML original + diagnóstico explicado por indicador.
-
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+from html import escape
 
 
 # ----------------------------------------------------------------------
@@ -27,141 +27,214 @@ st.set_page_config(
 PRIMARY = "#0757c9"
 
 
+# ----------------------------------------------------------------------
+# ESTILOS
+# ----------------------------------------------------------------------
+
 st.markdown(
     """
     <style>
 
     /* ==============================================================
-       TARJETAS KPI
+       KPI
        ============================================================== */
 
-    .kpi-card{
-        border-radius:10px;
-        padding:14px 12px;
-        color:white;
-        box-shadow:0 2px 7px rgba(0,0,0,.08);
-        min-height:92px;
-        height:100%;
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
-        overflow:hidden;
-        box-sizing:border-box;
+    .kpi-card {
+        border-radius: 10px;
+        padding: 13px 14px;
+        color: white;
+        box-shadow: 0 2px 7px rgba(0,0,0,.08);
+        min-height: 92px;
+        height: 92px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
-    .kpi-label{
-        font-size:clamp(10px, 0.85vw, 12px);
-        font-weight:600;
-        opacity:.9;
-        margin-bottom:6px;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
+    .kpi-label {
+        font-size: clamp(10px, 0.80vw, 12px);
+        font-weight: 600;
+        opacity: .92;
+        margin-bottom: 7px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1;
     }
 
-    .kpi-value{
-        font-size:clamp(15px, 1.45vw, 22px);
-        font-weight:800;
-        line-height:1.05;
-        white-space:normal;
-        overflow-wrap:anywhere;
-        word-break:break-word;
+    .kpi-value {
+        font-size: clamp(15px, 1.35vw, 21px);
+        font-weight: 800;
+        line-height: 1.05;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: -0.3px;
     }
 
-    /*
-       Ventas promedio:
-       Se permite una segunda línea controlada para evitar
-       que el valor sobresalga de la tarjeta.
+    /* Ventas promedio:
+       El valor permanece completo en una sola línea.
+       El tamaño se adapta al ancho disponible.
     */
-    .kpi-value-sales{
-        font-size:clamp(13px, 1.25vw, 20px);
-        font-weight:800;
-        line-height:1.02;
-        letter-spacing:-0.3px;
-        white-space:normal;
-        overflow-wrap:anywhere;
-        word-break:break-word;
+    .kpi-sales-value {
+        font-size: clamp(13px, 1.12vw, 19px);
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: -0.45px;
+        width: 100%;
+        display: block;
     }
 
-    .kpi-value-sales .sales-main{
-        display:block;
-    }
+    .k1 { background: #7050f6; }
+    .k2 { background: #0878e8; }
+    .k3 { background: #0ca5ba; }
+    .k4 { background: #05c47a; }
+    .k5 { background: #8b4df1; }
+    .k6 { background: #0756c9; }
 
-    .kpi-value-sales .sales-last{
-        display:block;
-        text-align:left;
-        margin-top:1px;
-    }
-
-    .k1{background:#7050f6}
-    .k2{background:#0878e8}
-    .k3{background:#0ca5ba}
-    .k4{background:#05c47a}
-    .k5{background:#8b4df1}
-    .k6{background:#0756c9}
 
     /* ==============================================================
        DIAGNÓSTICO
        ============================================================== */
 
-    .diag-box{
-        background:#fff;
-        border-left:5px solid #1264d6;
-        border-radius:8px;
-        padding:16px 18px;
-        box-shadow:0 2px 7px rgba(0,0,0,.05);
+    .diag-box {
+        background: #ffffff;
+        border-left: 5px solid #1264d6;
+        border-radius: 9px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 7px rgba(0,0,0,.06);
+        color: #25344a;
+        font-family: Arial, sans-serif;
     }
 
-    .ind-row{
-        font-size:14px;
-        margin:4px 0;
+    .diag-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 14px;
+        color: #26364d;
     }
 
-    .conclusion-box{
-        background:#f7f9fc;
-        border-radius:8px;
-        padding:14px;
-        margin-top:10px;
-        font-size:14px;
+    .diag-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 13px;
+        line-height: 1.45;
+        margin: 8px 0;
+        color: #344054;
     }
 
-    .assistant-box{
-        background:linear-gradient(135deg,#eef5ff,#f8fbff);
-        border:1px solid #dceafe;
-        border-radius:9px;
-        padding:18px;
+    .diag-icon {
+        width: 16px;
+        min-width: 16px;
+        font-size: 13px;
+        line-height: 18px;
     }
 
-    .risk-low{
-        border-left:4px solid #10b981;
-        padding:10px 14px;
-        border-radius:8px;
-        background:#fff;
+    .diag-text {
+        flex: 1;
     }
 
-    .risk-med{
-        border-left:4px solid #f59e0b;
-        padding:10px 14px;
-        border-radius:8px;
-        background:#fff;
+    .diag-text strong {
+        color: #26364d;
     }
 
-    .risk-high{
-        border-left:4px solid #ef4444;
-        padding:10px 14px;
-        border-radius:8px;
-        background:#fff;
+    .conclusion-box {
+        background: #f4f6f9;
+        border-radius: 8px;
+        padding: 14px 15px;
+        margin-top: 14px;
+        color: #344054;
+        font-size: 13px;
+        line-height: 1.5;
     }
+
+    .conclusion-title {
+        font-weight: 700;
+        color: #344054;
+        margin-bottom: 5px;
+    }
+
+    .recommendation {
+        margin-top: 14px;
+    }
+
+    .recommendation strong {
+        color: #344054;
+    }
+
 
     /* ==============================================================
-       CONTENEDORES DE GRÁFICAS
+       ASISTENTE IA
        ============================================================== */
 
-    .chart-description{
-        color:#667085;
-        font-size:12px;
-        margin-top:-8px;
-        margin-bottom:8px;
+    .assistant-box {
+        background: linear-gradient(
+            135deg,
+            #eef5ff,
+            #f8fbff
+        );
+        border: 1px solid #dceafe;
+        border-radius: 9px;
+        padding: 18px;
+        color: #344054;
+        font-family: Arial, sans-serif;
+    }
+
+    .assistant-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #25344a;
+        margin-bottom: 8px;
+    }
+
+    .assistant-text {
+        font-size: 13px;
+        line-height: 1.55;
+        margin: 0;
+    }
+
+
+    /* ==============================================================
+       RIESGO
+       ============================================================== */
+
+    .risk-low {
+        border-left: 4px solid #10b981;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .risk-med {
+        border-left: 4px solid #f59e0b;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .risk-high {
+        border-left: 4px solid #ef4444;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+
+    /* ==============================================================
+       GRÁFICAS
+       ============================================================== */
+
+    .chart-description {
+        color: #667085;
+        font-size: 12px;
+        margin-top: -5px;
+        margin-bottom: 8px;
     }
 
     </style>
@@ -175,7 +248,7 @@ st.markdown(
 # ----------------------------------------------------------------------
 
 def to_number(v):
-    """Convierte strings con formato colombiano ($, puntos de miles, coma decimal) a float."""
+    """Convierte valores colombianos a número."""
 
     if pd.isna(v):
         return 0.0
@@ -208,43 +281,44 @@ def percent(v):
 
 
 def get_field(row, names, default=0):
+
     for name in names:
-        if name in row and row[name] not in ("", None) and not pd.isna(row[name]):
+
+        if (
+            name in row
+            and row[name] not in ("", None)
+            and not pd.isna(row[name])
+        ):
             return row[name]
 
     return default
 
 
+def safe_text(value):
+    """Evita que datos del Excel rompan el HTML."""
+
+    return escape(str(value))
+
+
 # ----------------------------------------------------------------------
-# FORMATEO DE VENTAS PROMEDIO
+# KPI VENTAS PROMEDIO
 # ----------------------------------------------------------------------
 
 def ventas_kpi_html(valor):
-    """
-    Genera el valor de Ventas promedio en una tarjeta responsive.
 
-    Cuando el valor es largo, se divide en dos líneas de manera
-    controlada para que el último bloque numérico quede debajo
-    sin desbordar la tarjeta.
+    """
+    Mantiene el valor completo de ventas en una sola línea
+    y adapta el tamaño de letra al espacio disponible.
+
+    Ejemplo:
+    $2.919.610
     """
 
     valor_formateado = money(valor)
 
-    # Para valores largos separamos los últimos 3 dígitos.
-    if len(valor_formateado) > 9:
-        parte_principal = valor_formateado[:-3]
-        parte_final = valor_formateado[-3:]
-
-        return (
-            f"<div class='kpi-value-sales'>"
-            f"<span class='sales-main'>{parte_principal}</span>"
-            f"<span class='sales-last'>{parte_final}</span>"
-            f"</div>"
-        )
-
     return (
-        f"<div class='kpi-value-sales'>"
-        f"<span class='sales-main'>{valor_formateado}</span>"
+        f"<div class='kpi-sales-value'>"
+        f"{safe_text(valor_formateado)}"
         f"</div>"
     )
 
@@ -394,7 +468,7 @@ def calcular_indicadores(row):
 
 
 # ----------------------------------------------------------------------
-# CLASIFICACIÓN DE RIESGO
+# RIESGO
 # ----------------------------------------------------------------------
 
 def clasificar_riesgo(row):
@@ -425,16 +499,19 @@ def clasificar_riesgo(row):
 
     if row["endeudamiento"] > 0.70:
         p += 3
+
     elif row["endeudamiento"] > 0.50:
         p += 1
 
     if row["cobertura"] < 1:
         p += 3
+
     elif row["cobertura"] < 1.30:
         p += 1
 
     if row["margenBruto"] < 0.20:
         p += 2
+
     elif row["margenBruto"] < 0.30:
         p += 1
 
@@ -443,18 +520,24 @@ def clasificar_riesgo(row):
 
     if mora > 30:
         p += 3
+
     elif mora > 15:
         p += 1
 
     if "malo" in hist or "incum" in hist:
         p += 3
+
     elif "regular" in hist:
         p += 1
 
     return (
         "ALTO"
         if p >= 7
-        else ("MEDIO" if p >= 3 else "BAJO")
+        else (
+            "MEDIO"
+            if p >= 3
+            else "BAJO"
+        )
     )
 
 
@@ -485,12 +568,14 @@ def evaluar_viabilidad(riesgo, row):
 def generar_recomendacion(viabilidad):
 
     if viabilidad == "VIABLE":
+
         return (
             "Continuar estudio y validar soportes, flujo de caja "
             "y capacidad de pago."
         )
 
     if viabilidad == "VIABLE CON CONDICIONES":
+
         return (
             "Solicitar soportes adicionales y evaluar monto/plazo "
             "según capacidad de pago."
@@ -615,7 +700,7 @@ def semaforo_utilidad(v):
 
 
 # ----------------------------------------------------------------------
-# DIAGNÓSTICO CLIENTE
+# DIAGNÓSTICO
 # ----------------------------------------------------------------------
 
 def generar_diagnostico_cliente(row):
@@ -640,35 +725,87 @@ def generar_diagnostico_cliente(row):
         row["utilidadNeta"]
     )
 
-    lineas = [
+    # IMPORTANTE:
+    # Todo el bloque se genera como HTML continuo.
+    # No se separan los div mediante líneas Markdown.
+    html = f"""
+    <div class="diag-box">
 
-        f"<div class='ind-row'>"
-        f"{e_i} <strong>Endeudamiento:</strong> "
-        f"{percent(row['endeudamiento'])} → {e_l}. {e_t}"
-        f"</div>",
+        <div class="diag-title">
+            Diagnóstico financiero — {safe_text(nombre_cliente(row))}
+        </div>
 
-        f"<div class='ind-row'>"
-        f"{c_i} <strong>Cobertura:</strong> "
-        f"{row['cobertura']:.2f}x → {c_l}. {c_t}"
-        f"</div>",
+        <div class="diag-row">
+            <span class="diag-icon">{e_i}</span>
+            <span class="diag-text">
+                <strong>Endeudamiento:</strong>
+                {percent(row["endeudamiento"])}
+                → {e_l}.
+                {e_t}
+            </span>
+        </div>
 
-        f"<div class='ind-row'>"
-        f"{m_i} <strong>Margen:</strong> "
-        f"{percent(row['margenBruto'])} → {m_l}. {m_t}"
-        f"</div>",
+        <div class="diag-row">
+            <span class="diag-icon">{c_i}</span>
+            <span class="diag-text">
+                <strong>Cobertura:</strong>
+                {row["cobertura"]:.2f}x
+                → {c_l}.
+                {c_t}
+            </span>
+        </div>
 
-        f"<div class='ind-row'>"
-        f"{liq_i} <strong>Liquidez:</strong> "
-        f"{row['liquidez']:.2f}x → {liq_l}. {liq_t}"
-        f"</div>",
+        <div class="diag-row">
+            <span class="diag-icon">{m_i}</span>
+            <span class="diag-text">
+                <strong>Margen:</strong>
+                {percent(row["margenBruto"])}
+                → {m_l}.
+                {m_t}
+            </span>
+        </div>
 
-        f"<div class='ind-row'>"
-        f"{u_i} <strong>Utilidad neta:</strong> "
-        f"{money(row['utilidadNeta'])} → {u_l}. {u_t}"
-        f"</div>",
-    ]
+        <div class="diag-row">
+            <span class="diag-icon">{liq_i}</span>
+            <span class="diag-text">
+                <strong>Liquidez:</strong>
+                {row["liquidez"]:.2f}x
+                → {liq_l}.
+                {liq_t}
+            </span>
+        </div>
 
-    return "".join(lineas)
+        <div class="diag-row">
+            <span class="diag-icon">{u_i}</span>
+            <span class="diag-text">
+                <strong>Utilidad neta:</strong>
+                {money(row["utilidadNeta"])}
+                → {u_l}.
+                {u_t}
+            </span>
+        </div>
+
+        <div class="conclusion-box">
+
+            <div class="conclusion-title">
+                Conclusión:
+            </div>
+
+            <div>
+                {safe_text(generar_conclusion(row))}
+            </div>
+
+            <div class="recommendation">
+                <strong>Recomendación comercial:</strong>
+                {safe_text(row["recomendacion"])}
+            </div>
+
+        </div>
+
+    </div>
+    """
+
+    return html
 
 
 # ----------------------------------------------------------------------
@@ -680,6 +817,7 @@ def generar_conclusion(row):
     v = row["viabilidad"]
 
     if v == "VIABLE":
+
         return (
             "El negocio presenta indicadores financieros sólidos y consistentes. "
             "Por esta razón, se recomienda continuar con el estudio de crédito, "
@@ -687,6 +825,7 @@ def generar_conclusion(row):
         )
 
     if v == "VIABLE CON CONDICIONES":
+
         return (
             "El negocio presenta un perfil aceptable pero con puntos de atención. "
             "Se recomienda solicitar información adicional y ajustar monto o plazo "
@@ -702,7 +841,7 @@ def generar_conclusion(row):
 
 
 # ----------------------------------------------------------------------
-# PROCESAMIENTO DE DATOS
+# PROCESAMIENTO
 # ----------------------------------------------------------------------
 
 @st.cache_data(show_spinner=False)
@@ -733,10 +872,9 @@ def procesar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         axis=1,
     )
 
-    df["recomendacion"] = df[
-        "viabilidad"
-    ].apply(
-        generar_recomendacion
+    df["recomendacion"] = (
+        df["viabilidad"]
+        .apply(generar_recomendacion)
     )
 
     return df
@@ -768,14 +906,30 @@ with st.sidebar:
 
     st.markdown(
         f"""
-        <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>
-            <div style='width:32px;height:32px;background:{PRIMARY};
-                        color:white;border-radius:6px;
-                        display:flex;align-items:center;
-                        justify-content:center;font-weight:800;'>
+        <div style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin-bottom:10px;
+        ">
+            <div style="
+                width:32px;
+                height:32px;
+                background:{PRIMARY};
+                color:white;
+                border-radius:6px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-weight:800;
+            ">
                 F
             </div>
-            <span style='font-weight:700;font-size:18px;'>
+
+            <span style="
+                font-weight:700;
+                font-size:18px;
+            ">
                 FinanData AI
             </span>
         </div>
@@ -791,7 +945,11 @@ with st.sidebar:
 
     archivo = st.file_uploader(
         "📁 Cargar Excel",
-        type=["xlsx", "xls", "csv"]
+        type=[
+            "xlsx",
+            "xls",
+            "csv"
+        ]
     )
 
     if "clientes_df" not in st.session_state:
@@ -802,9 +960,16 @@ with st.sidebar:
         try:
 
             if archivo.name.lower().endswith(".csv"):
-                df_raw = pd.read_csv(archivo)
+
+                df_raw = pd.read_csv(
+                    archivo
+                )
+
             else:
-                df_raw = pd.read_excel(archivo)
+
+                df_raw = pd.read_excel(
+                    archivo
+                )
 
             if df_raw.empty:
 
@@ -846,18 +1011,19 @@ with st.sidebar:
 
             - **Utilidad neta** = Utilidad bruta − Gastos operativos − Gastos financieros. Debe ser positiva.
 
-            Estos indicadores combinados determinan el **riesgo** (bajo/medio/alto)
-            y la **viabilidad** (viable / viable con condiciones / no viable)
-            de cada negocio.
+            Estos indicadores combinados determinan el **riesgo**
+            y la **viabilidad** de cada negocio.
             """
         )
 
 
-df = st.session_state.get("clientes_df")
+df = st.session_state.get(
+    "clientes_df"
+)
 
 
 # ----------------------------------------------------------------------
-# ENCABEZADO Y SELECTOR DE CLIENTE
+# ENCABEZADO
 # ----------------------------------------------------------------------
 
 col_titulo, col_selector = st.columns(
@@ -926,27 +1092,25 @@ else:
 # KPIs
 # ----------------------------------------------------------------------
 
-k1, k2, k3, k4, k5, k6 = st.columns(6)
-
+k1, k2, k3, k4, k5, k6 = st.columns(
+    6
+)
 
 kpis = [
-
     (
         k1,
         "k1",
         "Total negocios",
         f"{len(datos)}",
-        "normal"
+        False,
     ),
-
     (
         k2,
         "k2",
         "Ventas promedio",
         datos["ventas"].mean(),
-        "sales"
+        True,
     ),
-
     (
         k3,
         "k3",
@@ -954,9 +1118,8 @@ kpis = [
         percent(
             datos["margenBruto"].mean()
         ),
-        "normal"
+        False,
     ),
-
     (
         k4,
         "k4",
@@ -964,9 +1127,8 @@ kpis = [
         money(
             datos["utilidadNeta"].mean()
         ),
-        "normal"
+        False,
     ),
-
     (
         k5,
         "k5",
@@ -974,39 +1136,41 @@ kpis = [
         percent(
             datos["endeudamiento"].mean()
         ),
-        "normal"
+        False,
     ),
-
     (
         k6,
         "k6",
         "Cobertura",
         f"{datos['cobertura'].mean():.2f}x",
-        "normal"
+        False,
     ),
 ]
 
 
-for col, klass, label, value, value_type in kpis:
+for col, klass, label, value, is_sales in kpis:
 
     with col:
 
-        if value_type == "sales":
+        if is_sales:
+
             value_html = ventas_kpi_html(
                 value
             )
+
         else:
+
             value_html = (
                 f"<div class='kpi-value'>"
-                f"{value}"
+                f"{safe_text(value)}"
                 f"</div>"
             )
 
         st.markdown(
             f"""
-            <div class='kpi-card {klass}'>
-                <div class='kpi-label'>
-                    {label}
+            <div class="kpi-card {klass}">
+                <div class="kpi-label">
+                    {safe_text(label)}
                 </div>
                 {value_html}
             </div>
@@ -1019,7 +1183,7 @@ st.write("")
 
 
 # ----------------------------------------------------------------------
-# DIAGNÓSTICO Y RECOMENDACIÓN FINANCIERA
+# DIAGNÓSTICO
 # ----------------------------------------------------------------------
 
 st.subheader(
@@ -1033,32 +1197,13 @@ if cliente_idx is not None:
         cliente_idx
     ]
 
-    st.markdown(
-        f"""
-        <div class='diag-box'>
-            <strong>
-                Diagnóstico financiero — {nombre_cliente(fila)}
-            </strong>
-            <br><br>
-
-            {generar_diagnostico_cliente(fila)}
-
-            <div class='conclusion-box'>
-                <strong>Conclusión:</strong>
-                <br>
-                {generar_conclusion(fila)}
-
-                <br><br>
-
-                <strong>
-                    Recomendación comercial:
-                </strong>
-
-                {fila['recomendacion']}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    # CAMBIO IMPORTANTE:
+    # Se utiliza st.html para garantizar que las etiquetas HTML
+    # no aparezcan como texto plano.
+    st.html(
+        generar_diagnostico_cliente(
+            fila
+        )
     )
 
 else:
@@ -1101,9 +1246,21 @@ else:
             "con la política de crédito vigente."
         )
 
-    st.markdown(
-        f"<div class='diag-box'>{texto}</div>",
-        unsafe_allow_html=True
+    st.html(
+        f"""
+        <div class="diag-box">
+            <div class="diag-title">
+                Diagnóstico general de cartera
+            </div>
+
+            <div class="diag-row">
+                <span class="diag-icon">📊</span>
+                <span class="diag-text">
+                    {safe_text(texto)}
+                </span>
+            </div>
+        </div>
+        """
     )
 
 
@@ -1118,18 +1275,19 @@ st.subheader(
     "Distribución del riesgo"
 )
 
-
-r1, r2, r3 = st.columns(3)
+r1, r2, r3 = st.columns(
+    3
+)
 
 
 with r1:
 
     st.markdown(
         f"""
-        <div class='risk-low'>
+        <div class="risk-low">
             <small>RIESGO BAJO</small>
             <h2>
-                {(df['riesgo'] == 'BAJO').sum()}
+                {(df["riesgo"] == "BAJO").sum()}
             </h2>
         </div>
         """,
@@ -1141,10 +1299,10 @@ with r2:
 
     st.markdown(
         f"""
-        <div class='risk-med'>
+        <div class="risk-med">
             <small>RIESGO MEDIO</small>
             <h2>
-                {(df['riesgo'] == 'MEDIO').sum()}
+                {(df["riesgo"] == "MEDIO").sum()}
             </h2>
         </div>
         """,
@@ -1156,10 +1314,10 @@ with r3:
 
     st.markdown(
         f"""
-        <div class='risk-high'>
+        <div class="risk-high">
             <small>RIESGO ALTO</small>
             <h2>
-                {(df['riesgo'] == 'ALTO').sum()}
+                {(df["riesgo"] == "ALTO").sum()}
             </h2>
         </div>
         """,
@@ -1174,13 +1332,14 @@ st.write("")
 # GRÁFICAS
 # ----------------------------------------------------------------------
 
-# ==============================================================
-# GRÁFICA 1:
-# DISTRIBUCIÓN DEL RIESGO
-# ==============================================================
+g1, g2 = st.columns(
+    2
+)
 
-g1, g2 = st.columns(2)
 
+# ----------------------------------------------------------------------
+# GRÁFICA 1 - DISTRIBUCIÓN DEL RIESGO
+# ----------------------------------------------------------------------
 
 with g1:
 
@@ -1192,7 +1351,11 @@ with g1:
         df["riesgo"]
         .value_counts()
         .reindex(
-            ["BAJO", "MEDIO", "ALTO"]
+            [
+                "BAJO",
+                "MEDIO",
+                "ALTO",
+            ]
         )
         .fillna(0)
     )
@@ -1225,10 +1388,10 @@ with g1:
 
     fig_riesgo.update_layout(
         margin=dict(
-            t=20,
+            t=15,
             b=10,
             l=10,
-            r=10
+            r=10,
         ),
         height=330,
         legend=dict(
@@ -1242,10 +1405,9 @@ with g1:
     )
 
 
-# ==============================================================
-# GRÁFICA 2:
-# LIQUIDEZ VS ENDEUDAMIENTO
-# ==============================================================
+# ----------------------------------------------------------------------
+# GRÁFICA 2 - LIQUIDEZ VS ENDEUDAMIENTO
+# ----------------------------------------------------------------------
 
 with g2:
 
@@ -1255,9 +1417,9 @@ with g2:
 
     st.markdown(
         """
-        <div class='chart-description'>
-        Relación entre capacidad de cubrir obligaciones de corto plazo
-        y nivel de deuda del negocio.
+        <div class="chart-description">
+            Relación entre capacidad de cubrir obligaciones de corto plazo
+            y nivel de deuda del negocio.
         </div>
         """,
         unsafe_allow_html=True
@@ -1265,9 +1427,11 @@ with g2:
 
     chart_data = datos.copy()
 
-    chart_data["Cliente_Display"] = chart_data.apply(
-        nombre_cliente,
-        axis=1
+    chart_data["Cliente_Display"] = (
+        chart_data.apply(
+            nombre_cliente,
+            axis=1
+        )
     )
 
     chart_data["Endeudamiento_%"] = (
@@ -1282,18 +1446,16 @@ with g2:
         chart_data["riesgo"]
     )
 
-    colores_riesgo = {
-        "BAJO": "#10b981",
-        "MEDIO": "#f59e0b",
-        "ALTO": "#ef4444",
-    }
-
     fig_liquidez = px.scatter(
         chart_data,
         x="Endeudamiento_%",
         y="Liquidez_x",
         color="Riesgo",
-        color_discrete_map=colores_riesgo,
+        color_discrete_map={
+            "BAJO": "#10b981",
+            "MEDIO": "#f59e0b",
+            "ALTO": "#ef4444",
+        },
         hover_name="Cliente_Display",
         hover_data={
             "Endeudamiento_%": ":.1f",
@@ -1307,25 +1469,22 @@ with g2:
         },
     )
 
-    # Línea vertical de referencia 50%
     fig_liquidez.add_vline(
         x=50,
         line_dash="dash",
         line_color="#64748b",
-        annotation_text="Endeudamiento 50%",
+        annotation_text="50%",
         annotation_position="top",
     )
 
-    # Línea vertical de referencia 70%
     fig_liquidez.add_vline(
         x=70,
         line_dash="dot",
         line_color="#ef4444",
-        annotation_text="Endeudamiento 70%",
+        annotation_text="70%",
         annotation_position="top right",
     )
 
-    # Línea horizontal de liquidez 1x
     fig_liquidez.add_hline(
         y=1,
         line_dash="dash",
@@ -1339,8 +1498,8 @@ with g2:
             size=13,
             line=dict(
                 width=1,
-                color="white"
-            )
+                color="white",
+            ),
         )
     )
 
@@ -1349,7 +1508,7 @@ with g2:
             t=30,
             b=10,
             l=10,
-            r=10
+            r=10,
         ),
         height=330,
         legend=dict(
@@ -1363,13 +1522,18 @@ with g2:
     )
 
 
-# ==============================================================
-# GRÁFICA 3:
-# DSCR / COBERTURA DE DEUDA
-# ==============================================================
+# ----------------------------------------------------------------------
+# DSCR
+# ----------------------------------------------------------------------
 
-g3, g4 = st.columns(2)
+g3, g4 = st.columns(
+    2
+)
 
+
+# ----------------------------------------------------------------------
+# GRÁFICA 3 - DSCR / COBERTURA
+# ----------------------------------------------------------------------
 
 with g3:
 
@@ -1379,9 +1543,9 @@ with g3:
 
     st.markdown(
         """
-        <div class='chart-description'>
-        Capacidad del flujo disponible para cubrir la cuota mensual
-        del crédito. Un DSCR superior a 1.30x representa mayor holgura.
+        <div class="chart-description">
+            Capacidad del flujo disponible para cubrir la cuota mensual
+            del crédito. Un DSCR superior a 1.30x representa mayor holgura.
         </div>
         """,
         unsafe_allow_html=True
@@ -1389,14 +1553,20 @@ with g3:
 
     dscr_data = datos.copy()
 
-    dscr_data["Cliente_Display"] = dscr_data.apply(
-        nombre_cliente,
-        axis=1
+    dscr_data["Cliente_Display"] = (
+        dscr_data.apply(
+            nombre_cliente,
+            axis=1
+        )
     )
 
-    dscr_data["DSCR"] = dscr_data["cobertura"]
+    dscr_data["DSCR"] = (
+        dscr_data["cobertura"]
+    )
 
-    dscr_data["Riesgo"] = dscr_data["riesgo"]
+    dscr_data["Riesgo"] = (
+        dscr_data["riesgo"]
+    )
 
     fig_dscr = px.bar(
         dscr_data,
@@ -1420,7 +1590,6 @@ with g3:
         },
     )
 
-    # Nivel mínimo de cobertura
     fig_dscr.add_hline(
         y=1,
         line_dash="dash",
@@ -1429,7 +1598,6 @@ with g3:
         annotation_position="top left",
     )
 
-    # Nivel recomendado
     fig_dscr.add_hline(
         y=1.30,
         line_dash="dot",
@@ -1443,7 +1611,7 @@ with g3:
             t=30,
             b=50,
             l=10,
-            r=10
+            r=10,
         ),
         height=330,
         xaxis=dict(
@@ -1460,10 +1628,9 @@ with g3:
     )
 
 
-# ==============================================================
-# GRÁFICA 4:
-# DSCR / COBERTURA EN RELACIÓN CON RIESGO
-# ==============================================================
+# ----------------------------------------------------------------------
+# GRÁFICA 4 - DSCR HORIZONTAL
+# ----------------------------------------------------------------------
 
 with g4:
 
@@ -1473,26 +1640,26 @@ with g4:
 
     st.markdown(
         """
-        <div class='chart-description'>
-        Comparación individual de cobertura de deuda. La gráfica se
-        actualiza automáticamente al cambiar el cliente seleccionado.
+        <div class="chart-description">
+            Comparación individual de cobertura de deuda.
+            Se actualiza automáticamente al cambiar el cliente.
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # Para todos los clientes usamos los datos seleccionados
-    # y para un cliente individual mostramos únicamente ese registro.
     ranking_dscr = datos.copy()
 
-    ranking_dscr["Cliente_Display"] = ranking_dscr.apply(
-        nombre_cliente,
-        axis=1
+    ranking_dscr["Cliente_Display"] = (
+        ranking_dscr.apply(
+            nombre_cliente,
+            axis=1
+        )
     )
 
-    ranking_dscr["DSCR"] = ranking_dscr[
-        "cobertura"
-    ]
+    ranking_dscr["DSCR"] = (
+        ranking_dscr["cobertura"]
+    )
 
     ranking_dscr = ranking_dscr.sort_values(
         "DSCR",
@@ -1543,10 +1710,9 @@ with g4:
             t=30,
             b=10,
             l=10,
-            r=10
+            r=10,
         ),
         height=330,
-        showlegend=True,
         legend=dict(
             orientation="h"
         ),
@@ -1586,7 +1752,7 @@ else:
         fila,
         [
             "Ciudad",
-            "Municipio"
+            "Municipio",
         ],
         "-"
     )
@@ -1595,82 +1761,71 @@ else:
         fila,
         [
             "Actividad_Economica",
-            "Actividad"
+            "Actividad",
         ],
         "-"
     )
 
-    d1, d2, d3, d4 = st.columns(4)
+    d1, d2, d3, d4 = st.columns(
+        4
+    )
 
     campos = [
-
         (
             "CLIENTE",
             nombre_cliente(fila)
         ),
-
         (
             "CIUDAD",
             ciudad
         ),
-
         (
             "ACTIVIDAD",
             actividad
         ),
-
         (
             "VENTAS MENSUALES",
             money(fila["ventas"])
         ),
-
         (
             "UTILIDAD NETA",
             money(fila["utilidadNeta"])
         ),
-
         (
             "MARGEN",
             percent(fila["margenBruto"])
         ),
-
         (
             "ENDEUDAMIENTO",
             percent(fila["endeudamiento"])
         ),
-
         (
             "LIQUIDEZ",
             f"{fila['liquidez']:.2f}x"
         ),
-
         (
             "COBERTURA",
             f"{fila['cobertura']:.2f}x"
         ),
-
         (
             "CAPITAL DE TRABAJO",
             money(fila["capitalTrabajo"])
         ),
-
         (
             "RIESGO",
             fila["riesgo"]
         ),
-
         (
             "VIABILIDAD",
             fila["viabilidad"]
         ),
-
     ]
 
     cols = [
         d1,
         d2,
         d3,
-        d4
+        d4,
     ]
 
     for i, (label, value) in enumerate(campos):
@@ -1679,12 +1834,12 @@ else:
 
             st.markdown(
                 f"""
-                <small style='color:#778399;'>
-                    {label}
+                <small style="color:#778399;">
+                    {safe_text(label)}
                 </small>
                 <br>
                 <strong>
-                    {value}
+                    {safe_text(value)}
                 </strong>
                 """,
                 unsafe_allow_html=True
@@ -1697,7 +1852,7 @@ st.write("")
 
 
 # ----------------------------------------------------------------------
-# TABLA DE SEÑALES Y RECOMENDACIÓN
+# TABLA
 # ----------------------------------------------------------------------
 
 st.subheader(
@@ -1707,9 +1862,11 @@ st.subheader(
 
 tabla = df.copy()
 
-tabla["Cliente"] = tabla.apply(
-    nombre_cliente,
-    axis=1
+tabla["Cliente"] = (
+    tabla.apply(
+        nombre_cliente,
+        axis=1
+    )
 )
 
 tabla_mostrar = tabla[
@@ -1747,7 +1904,6 @@ tabla_mostrar["cobertura"] = (
         lambda x: f"{x:.2f}x"
     )
 )
-
 
 tabla_mostrar.columns = [
     "Cliente",
@@ -1792,12 +1948,19 @@ viables = (
 ).sum()
 
 
-st.markdown(
-    f"""
-    <div class='assistant-box'>
-        <h4>🤖 Asistente IA comercial</h4>
+# CAMBIO IMPORTANTE:
+# Se utiliza st.html() para evitar que aparezcan etiquetas HTML
+# como texto plano.
 
-        <p>
+st.html(
+    f"""
+    <div class="assistant-box">
+
+        <div class="assistant-title">
+            🤖 Asistente IA comercial
+        </div>
+
+        <p class="assistant-text">
             El análisis identifica
             <strong>{bajo}</strong>
             negocios en riesgo bajo,
@@ -1813,7 +1976,7 @@ st.markdown(
             Estos resultados sirven como apoyo comercial y no reemplazan
             la decisión crediticia definitiva.
         </p>
+
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
